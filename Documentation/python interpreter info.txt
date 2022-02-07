@@ -1,0 +1,9 @@
+for laptop:
+use python 3.8 (python)
+project structure should always include the venv
+
+when switching between laptop or desktop edit the python interpreter 
+
+table with conda vs pip vs env
+https://conda.io/projects/conda/en/latest/commands.html#conda-vs-pip-vs-virtualenv-commands
+

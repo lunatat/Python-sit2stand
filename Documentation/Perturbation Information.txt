@@ -1,0 +1,14 @@
+0 = south
+4 = North
+
+top pulleys:
+	dome
+ 6		2
+ 
+ 7		3
+	
+Bottom pulleys 
+	dome
+ 5		1
+ 
+ 8		4
