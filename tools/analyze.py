@@ -161,7 +161,9 @@ def getperttime(data, mrk, threshold):
     # 1 check which type of perturbation  perttype(0=pelv, 1=treadmill, 2=visual)
     # 2 get onset/endttme of perturbations: pelv-tensiondata, visual-perton, treadmill-feetYvelocity
     # 3 calculate current onset position of pelvis/ maximum pelvic height
-    # 4 past threshold look at 200
+    # 4  tension data checks valleys- of averaged current tension - finds end point by checking desired T
+    #       treadmill onset is determined by velocity y of LEFT heel!
+
     out = mrk.values
     out = np.vstack(out[:, :]).astype(np.float)  # converts to float array
     xmn, ymn, zmn = getcofpelv(out, threshold.values[0, 0] - 1)
@@ -192,20 +194,17 @@ def getperttime(data, mrk, threshold):
                 cables = [x + ct for x in [2, 3, 6, 7]]  # python is dumb this is att + []
                 # check if force is past subject's threshold!
                 if data.values[k, f] <= threshold.values[0, -1]:
-                    endp[j] = 200  # end perturbation time for <= threshold is 110 frames after onset
-                    if round(data.values[k, f]*100/(w*9.81)) == 5:
+                    if round(data.values[k, f]*100/(w*9.81)) == 5 or round(data.values[k, f]*100/(w*9.81)) == 6:
                         pertlvl[j] = 1
                     elif round(data.values[k, f]*100/(w*9.81)) == threshold.values[0, 2]:
                         pertlvl[j] = 2
                     else:
                         pertlvl[j] = 4
                 else:
-                    endp[j] = 200  # past threshold end point is 110 frames after onset
                     pertlvl[j] = 3
             elif data["pertDirection"][k] == 4.0:  # north
                 cables = [x + ct for x in [0, 1, 4, 5]]
                 if data.values[k, f] <= threshold.values[0, -2]:
-                    endp[j] = 200
                     if round(data.values[k, f]*100/(w*9.81)) == 5:
                         pertlvl[j] = 1
                     elif round(data.values[k, f]*100/(w*9.81)) == threshold.values[0, 1]:
@@ -213,11 +212,17 @@ def getperttime(data, mrk, threshold):
                     else:
                         pertlvl[j] = 4
                 else:
-                    endp[j] = 200
                     pertlvl[j] = 3
-            meanT = np.mean(out[k:k + 2 * pd, cables], 1)
-            onset[j] = k + 40 + np.argmin(meanT[40:pd])  # NOT FOOL PROOF check plots
-            endp[j] = endp.item(j) + onset.item(j)
+            meanT = np.mean(out[k:k + 200, cables], 1)
+            valleys, prop = signal.find_peaks(-meanT, distance=60)
+            mxpkdist = np.argmax(valleys[1:] - valleys[0:-1])
+            onset[j] = k + valleys[mxpkdist]
+            meandesT = np.mean(out[k:k + 200, dest:dest + 8], 1)
+            # find when meandestT is = to 15, then search forward for closest valley to it-thats endpoint:
+            endp[j] = valleys[np.argmin(np.argmin(meandesT - 15) - valleys)] + k
+            # onset[j] = k + 40 + np.argmin(meanT[40:pd])
+            # NOT FOOL PROOF check plots
+            # endp[j] = onset.item(j) + 100 + np.argmin(np.abs(meanT(onset.item(j))-meanT[100:]))
             plt.plot(out[onset.item(j):endp.item(j), dest:dest + 8])
             plt.plot(out[onset.item(j):endp.item(j), ct:ct + 8])
             plt.show(block=False)
@@ -226,13 +231,16 @@ def getperttime(data, mrk, threshold):
             pertvalue[j] = data["PertampF"][onset.item(j)]
             pertval[j] = np.round((pertvalue[j] * 100) / (9.81 * w))
         elif data["perttype"][k] == 1:  # treadmill
-            # check feet for onset
+            # check Left heel velocity for onset
             # delay is about 100 frames from onset
-            vely = (mrk.values[k + 1:k + 200, -2] - mrk.values[k:k + 199, -2]) / dt
+            vely = (mrk.values[k + 1:k + 300, -2] - mrk.values[k:k + 299, -2]) / dt
             if data["pertDirection"][k] == 4.0:  # north
-                onset[j] = k + 100 + np.argmin(vely[100:])  # NOT FOOL PROOF check plots
+                onset[j] = k + 100 + np.argmin(vely[100:150])  # NOT FOOL PROOF check plots
+                endp[j] = onset.item(j) + 150 + np.argmin(vely[150:])
+                # plt.plot(vely)
+                # plt.plot(np.argmin(vely[100:150]) + 100, vely[100 + np.argmin(vely[100:150])], "o")
+                # plt.plot(np.argmin(vely[150:]) + 150, vely[150 + np.argmin(vely[150:])], "o")
                 if data.values[k, f + 1] <= threshold.values[0, 3]:
-                    endp[j] = 200 + onset.item(j)
                     if data.values[k, f+1] == 0.4:
                         pertlvl[j] = 1
                     elif data.values[k, f+1] == threshold.values[0, 3]:
@@ -240,12 +248,11 @@ def getperttime(data, mrk, threshold):
                     else:
                         pertlvl[j] = 4
                 else:
-                    endp[j] = 200 + onset.item(j)
                     pertlvl[j] = 3
             elif data["pertDirection"][k] == 0.0:  # south
-                onset[j] = k + 100 + np.argmax(vely[100:])
+                onset[j] = k + 100 + np.argmax(vely[100:150])
+                endp[j] = onset.item(j) + 150 + np.argmax(vely[150:])
                 if data.values[k, f + 1] <= threshold.values[0, 4]:
-                    endp[j] = 200 + onset.item(j)
                     if data.values[k, f+1] == 0.4:
                         pertlvl[j] = 1
                     elif data.values[k, f+1] == threshold.values[0, 4]:
@@ -253,10 +260,9 @@ def getperttime(data, mrk, threshold):
                     else:
                         pertlvl[j] = 4
                 else:
-                    endp[j] = 200 + onset.item(j)
                     pertlvl[j] = 3
             plt.plot(mrk.values[onset.item(j):endp.item(j), -2])  # left foot heel y
-            plt.plot(mrk.values[onset.item(j):endp.item(j) + 100, 64])  # right foot heel y
+            plt.plot(mrk.values[onset.item(j):endp.item(j)+100, 64])  # right foot heel y
             plt.show(block=False)
             plt.pause(1)
             plt.close()
