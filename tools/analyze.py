@@ -270,7 +270,7 @@ def getperttime(data, mrk, threshold):
             pertval[j] = pertvalue[j]
         else:  # visual disturbances:
             onset[j] = k
-            endp[j] = k + 200 + 50
+            endp[j] = k + 150
             pertvalue[j] = data["PertVisual"][onset.item(j)]
             pertval[j] = pertvalue[j]
             pertlvl[j] = 4
@@ -618,3 +618,31 @@ def resampvar(var, var_names, pertinfo, subject_index):
         for k in range(0, len(pertinfo.index.to_list())):
             resamp_var[pertinfo.index.to_list()[k]] = pertinfo.values[k]
     return resamp_var
+
+##########################################################################
+def stepped(fzdata):
+    """
+    :param fzdata: gndFz left and right
+    :return: time point when indv. is unstable-steps
+    """
+    fpt = np.arange(0, len(fzdata.values[:, 0]) / 1000, 1 / 1000)  # fp time
+    out = fzdata.values
+    np.min(out[:, 0])
+    zeroLfz = np.array(np.where(out[:, 0] >= -10))
+    zeroRfz = np.array(np.where(out[:, 1] >= -10))
+    lftstept = fpt[zeroLfz[0, :]]
+    rftstept = fpt[zeroRfz[0, :]]
+    return lftstept, rftstept
+
+##########################################################################
+def label_data(data, timedata):
+    """
+
+    :param data:
+    :param timedata:
+    :return:
+    """
+    # todo: finish this fxn
+    return data
+
+##########################################################################

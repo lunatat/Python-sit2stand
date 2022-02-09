@@ -45,21 +45,27 @@ for i in range(0, len(filenames)):
     print('Loading EMG: ', file)
     emg = vn.read_emg_csv(vn.getpath(emgpath, subject, file))
     et = np.arange(0, len(emg.values[:, 0]) / 2000, 1 / 2000)  # emg time
+    # 1. label everything zero @ first = stable, no perturbation
+    emg['stable'] = 0
+    mrkdata['stable'] = 0
 
     if file[0:4] != 'pert':  # load baseline:
-        # label as 0: no perturbation
-        pxi = 'NA'
         pert = pandas.DataFrame(data=[[-1, -1, -1, 0, -1, 0, 0, 0]],
                                 columns=('pertStart', 'pertEnd', 'pertType', 'pertValue', 'pertDirt',
                                          'pertampVal', 'pertlvl', 'heightwhenpert'))
     else:  # load pert files
-        print('Loading FPlate: ', file)
-        fplate = vn.read_vicon_XYZ_file(vn.getpath(fppath, subject, file))
-        fpt = np.arange(0, len(fplate.values[:, 0]) / 1000, 1 / 1000)  # fp time
+        print('Loading PXI: ', file)
         pxi = vn.read_pxi_txt(pxipath + subject + '/' + subject + '_' + file[0:4] + '_' + file[4:6] + '.txt')
         # pert is dataframe of ('pertStart', 'pertEnd', 'pertType', 'pertValue', 'pertDirt',
         # 'pertampVal', 'pertlvl', 'heightwhenpert')
         pert = lyz.getperttime(pxi, mrkdata, thresholds.loc[thresholds.subject == subject_index + 1])
+        print('Loading FPlate: ', file)
+        fplate = vn.read_vicon_XYZ_file(vn.getpath(fppath, subject, file))
+        fpt = np.arange(0, len(fplate.values[:, 0]) / 1000, 1 / 1000)  # fp time
+        lftstept, rftstept = lyz.stepped(fplate.iloc[:, fplatecolumnind])
+        # todo now label everything during stepping as 2
+
+        # todo and then go through perturbations and label onset until end or step as 1
 
     for k in range(0, len(time_sets.values[:, 0])):
         # todo figure out when to end spliced marker data!
@@ -78,10 +84,9 @@ for i in range(0, len(filenames)):
             if pert.values[here, 2] == 2.0:
                 # TODO label as 0: no perturbation
                 cuttohere = time_sets.values[k, 1]
-            # check if time_set.values[k,1] is b4 or after end of pert time choose later one
-            # todo check forceplate data to see if stepped
+            # todo check if time_set.values[k,1] is b4 or after end of pert time choose later one!
             cuttohere = pert.values[here, 1]
-        else:
+        else:  # baseline data:
             here = k
             cuttohere = time_sets.values[k, 1]
 
