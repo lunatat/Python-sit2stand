@@ -628,21 +628,58 @@ def stepped(fzdata):
     fpt = np.arange(0, len(fzdata.values[:, 0]) / 1000, 1 / 1000)  # fp time
     out = fzdata.values
     np.min(out[:, 0])
-    zeroLfz = np.array(np.where(out[:, 0] >= -10))
-    zeroRfz = np.array(np.where(out[:, 1] >= -10))
+    zeroLfz = np.array(np.where(out[:, 0] >= -11))
+    zeroRfz = np.array(np.where(out[:, 1] >= -11))
     lftstept = fpt[zeroLfz[0, :]]
     rftstept = fpt[zeroRfz[0, :]]
     return lftstept, rftstept
 
 ##########################################################################
-def label_data(data, timedata):
-    """
+def label_step(data, lftstept, rftstept, t):
+    """ relabels data.stable to 2 if there was any lftstep or rftstep
 
-    :param data:
-    :param timedata:
-    :return:
+    :param t: time of data
+    :param rftstept: the time rft steps
+    :param data: emg or mrk data
+    :param lftstept: time lft steps
+    :return: data with labeled : 2
     """
-    # todo: finish this fxn
+    if len(lftstept) != 0:
+        # label here left foot step times
+        indexlstep = np.empty(shape=[len(lftstept), 1], dtype=int)
+        i = 0
+        for x in lftstept:
+            indexlstep[i] = np.argmin(np.abs(x - t))  # find ftsteptimes index location
+            i = i+1
+        data.stable.iloc[np.unique(indexlstep)] = 2
+    if len(rftstept) !=0:
+        # label here right foot step times
+        indexrstep = np.empty(shape=[len(rftstept), 1], dtype=int)
+        i = 0
+        for x in rftstept:
+            indexrstep[i] = np.argmin(np.abs(x - t))
+            i = i + 1
+        data.stable.iloc[np.unique(indexrstep)] = 2
+   # plt.plot(t, data.stable)
     return data
 
 ##########################################################################
+def label_pert(data, pertinfo, t):
+    """ find index times of when pert started and ended and label data as 1
+
+    :param t: time of data in same frame rate
+    :param data: emg or mrk data
+    :param pertinfo: dataframe with: ('pertStart', 'pertEnd', 'pertType', 'pertValue', 'pertDirt',
+                                          'pertampVal', 'pertlvl', 'heightwhenpert')
+    :return:
+    """
+    i = 0
+    out = pertinfo.values
+    visualp = np.array(np.where(out[:, 2] == 2))
+    out = np.delete(out, visualp, axis=0)
+    for x in out[:, 0]:
+        indexstart = np.argmin(np.abs(x - t))
+        indexend = np.argmin(np.abs(out[i, 1] - t))
+        i = i + 1
+        data.stable.iloc[indexstart:indexend] = 1
+    return data

@@ -12,6 +12,7 @@ import tools.vicon as vn
 import pickle as pkl
 import tools.analyze as lyz
 import numpy as np
+import matplotlib.pyplot as plt
 
 # File Paths from DESKTOP:
 emgpath = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/EMG Export/'
@@ -60,15 +61,17 @@ for i in range(0, len(filenames)):
         # 'pertampVal', 'pertlvl', 'heightwhenpert')
         pert = lyz.getperttime(pxi, mrkdata, thresholds.loc[thresholds.subject == subject_index + 1])
         print('Loading FPlate: ', file)
+        # label data during perturbations:
+        mrkdata = lyz.label_pert(mrkdata, pert, mt)
+        emg = lyz.label_pert(emg, pert, et)
+        # find time points when person stepped:
         fplate = vn.read_vicon_XYZ_file(vn.getpath(fppath, subject, file))
         fpt = np.arange(0, len(fplate.values[:, 0]) / 1000, 1 / 1000)  # fp time
         lftstept, rftstept = lyz.stepped(fplate.iloc[:, fplatecolumnind])
-        # todo now label everything during stepping as 2
-
-        # todo and then go through perturbations and label onset until end or step as 1
+        mrkdata = lyz.label_step(mrkdata, lftstept, rftstept, mt)
+        emg = lyz.label_step(emg, lftstept, rftstept, et)
 
     for k in range(0, len(time_sets.values[:, 0])):
-        # todo figure out when to end spliced marker data!
         # get the perturbation time onset that was delivered AFTER start of sit2stand
         if file[0:4] == 'pert':
             if not [x for x in pert.values[:, 0] - time_sets.values[k, 0] if x > 0]:
@@ -81,22 +84,26 @@ for i in range(0, len(filenames)):
             if pert.values[here, 0] > time_sets.values[k, 1]:
                 print("perturbation onset was before sit2stand AND wrong selected pert cycle, continue")
                 continue
-            if pert.values[here, 2] == 2.0:
-                # TODO label as 0: no perturbation
+            if pert.values[here, 2] != 2.0:
+                # check if time_set.values[k,1] is b4 or after end of pert time choose later 1 &add1s after
+                cuttohere = np.max([pert.values[here, 1], time_sets.values[k, 1]]) + 1
+            else:
                 cuttohere = time_sets.values[k, 1]
-            # todo check if time_set.values[k,1] is b4 or after end of pert time choose later one!
-            cuttohere = pert.values[here, 1]
         else:  # baseline data:
             here = k
             cuttohere = time_sets.values[k, 1]
 
-        # center marker data based on feet position at start of sit2stand
-        m = mrkdata.values[
+        m = mrkdata.iloc[
             np.argmin(np.abs(time_sets.values[k, 0] - mt)): np.argmin(np.abs(cuttohere - mt)), :]
-        m = lyz.recenterMrk(m)
+        em = emg.iloc[
+             np.argmin(np.abs(time_sets.values[k, 0] - et)): np.argmin(np.abs(cuttohere-et)),
+             :]
+        if k == 0:
+            mrkspliced = m
+            emgspliced = em
+        else:
+            mrkspliced = pandas.concat([mrkspliced, m])
+            emgspliced = pandas.concat([emgspliced, em])
+        # todo now decide how to save data after triming it
+        print('delete this later')
 
-    #TODO label
-    # 0: no perturbation
-    # 1: identify perturbation durations
-    # 2: use gndForces to determine if 1(perturbedbutstable) or 2(falling)
-    # filter EMG?
