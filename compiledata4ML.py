@@ -42,11 +42,11 @@ for i in range(0, len(filenames)):
     print('Loading MRK: ', file)
     mrkdata = vn.read_vicon_XYZ_file(filenames[i])
     time_sets = lyz.splitsit2stand(mrkdata, subject_index)  # time (s) of when sub starts&finishes standing
-    mt = np.arange(0, len(mrkdata.values[:, 0]) / 200, 1 / 200)  # mrk time
+    mt = np.linspace(0, len(mrkdata.values[:, 0]) / 200, len(mrkdata.values[:, 0]))  # mrk time
     mrkdata['time'] = mt
     print('Loading EMG: ', file)
     emg = vn.read_emg_csv(vn.getpath(emgpath, subject, file))
-    et = np.arange(0, len(emg.values[:, 0]) / 2000, 1 / 2000)  # emg time
+    et = np.linspace(0, len(emg.values[:, 0]) / 2000, len(emg.values[:, 0]))  # emg time
     emg['time'] = et
     # 1. label everything zero @ first = stable, no perturbation
     emg['stable'] = 0

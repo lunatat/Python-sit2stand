@@ -625,7 +625,7 @@ def stepped(fzdata):
     :param fzdata: gndFz left and right
     :return: time point when indv. is unstable-steps
     """
-    fpt = np.arange(0, len(fzdata.values[:, 0]) / 1000, 1 / 1000)  # fp time
+    fpt = np.linspace(0, len(fzdata.values[:, 0]) / 1000, len(fzdata.values[:, 0]))  # fp time
     out = fzdata.values
     np.min(out[:, 0])
     zeroLfz = np.array(np.where(out[:, 0] >= -11))
