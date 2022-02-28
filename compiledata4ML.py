@@ -1,15 +1,14 @@
-# Loads raw mrk, fplate, emg, pxi -> compile raw data based on perturbation data -> export pickle
+# Loads raw mrk, fplate, emg, pxi -> compile raw data based on perturbation data -> export csv
 # user will only be asked to select marker data
 # compiling data to use for prediction/RNN
 
 # Affiliation : ROAR Lab
 # Project: TPAD sit-to-stand: study01
 # Author: Tatiana D. Luna
-# Date: 2.7.22
+# Date: 2.28.22
 
 import pandas
 import tools.vicon as vn
-import pickle as pkl
 import tools.analyze as lyz
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +17,8 @@ import matplotlib.pyplot as plt
 emgpath = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/EMG Export/'
 fppath = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Force Plate Export/'
 pxipath = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/PXI/'
-subfile = 'D:/GitHub Content/RobUST/RobUST/TPAD-subjects.xlsx'  # delete?
+subfile = 'D:/GitHub Content/RobUST/RobUST/TPAD-subjects.xlsx'
+savehere = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Python Data Output/ML Datasets'
 
 filenames = vn.fxn_select_files()  # Ask user to select raw marker files to load
 stringname = ''.join(filenames[0])
@@ -43,9 +43,11 @@ for i in range(0, len(filenames)):
     mrkdata = vn.read_vicon_XYZ_file(filenames[i])
     time_sets = lyz.splitsit2stand(mrkdata, subject_index)  # time (s) of when sub starts&finishes standing
     mt = np.arange(0, len(mrkdata.values[:, 0]) / 200, 1 / 200)  # mrk time
+    mrkdata['time'] = mt
     print('Loading EMG: ', file)
     emg = vn.read_emg_csv(vn.getpath(emgpath, subject, file))
     et = np.arange(0, len(emg.values[:, 0]) / 2000, 1 / 2000)  # emg time
+    emg['time'] = et
     # 1. label everything zero @ first = stable, no perturbation
     emg['stable'] = 0
     mrkdata['stable'] = 0
@@ -98,12 +100,24 @@ for i in range(0, len(filenames)):
         em = emg.iloc[
              np.argmin(np.abs(time_sets.values[k, 0] - et)): np.argmin(np.abs(cuttohere-et)),
              :]
+
         if k == 0:
             mrkspliced = m
             emgspliced = em
         else:
             mrkspliced = pandas.concat([mrkspliced, m])
             emgspliced = pandas.concat([emgspliced, em])
-        # todo now decide how to save data after triming it
-        print('delete this later')
+
+    # save file info before loading next file
+    if i == 0:
+        mrkspliced.to_csv((savehere + '/' + subject + '_mrk.csv'), index=False)
+        maxEMG = np.max(emgspliced.iloc[:, 0:6], axis=0)
+        emgspliced.iloc[:, 0:6] = emgspliced.iloc[:, 0:6] / maxEMG
+        emgspliced.to_csv((savehere + '/' + subject + '_emg.csv'), index=False)
+    else:
+        mrkspliced.to_csv((savehere + '/' + subject + '_mrk.csv'), mode='a', header=False, index=False)
+        emgspliced.iloc[:, 0:6] = emgspliced.iloc[:, 0:6] / maxEMG
+        emgspliced.to_csv((savehere + '/' + subject + '_emg.csv'), mode='a', header=False, index=False)
+    print(('Loaded', i+1, 'out of', len(filenames), 'files'))
+
 
