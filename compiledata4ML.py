@@ -109,6 +109,8 @@ for i in range(0, len(filenames)):
             emgspliced = pandas.concat([emgspliced, em])
 
     # save file info before loading next file
+    mrkspliced['file'] = (subject + file)
+    emgspliced['file'] = (subject + file)
     if i == 0:
         mrkspliced.to_csv((savehere + '/' + subject + '_mrk.csv'), index=False)
         maxEMG = np.max(emgspliced.iloc[:, 0:6], axis=0)
