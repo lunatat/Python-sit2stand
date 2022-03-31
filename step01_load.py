@@ -61,9 +61,11 @@ for i in range(0, len(filenames)):
     print('Loading EMG: ', file)
     emg = vn.read_emg_csv(vn.getpath(emgpath, subject, file))
     # time of mrk, fplate, emg data
-    mt = np.arange(0, len(mrkdata.values[:, 0]) / 200, 1 / 200)
-    fpt = np.arange(0, len(fplate.values[:, 0]) / 1000, 1 / 1000)
-    et = np.arange(0, len(emg.values[:, 0]) / 2000, 1 / 2000)
+    mt = np.linspace(0, len(mrkdata.values[:, 0]) / 200, len(mrkdata.values[:, 0]))  # mrk time
+    mrkdata['time'] = mt
+    et = np.linspace(0, len(emg.values[:, 0]) / 2000, len(emg.values[:, 0]))  # emg time
+    emg['time'] = et
+    fpt = np.linspace(0, len(fplate.values[:, 0]) / 1000, len(fplate.values[:, 0]))  # fp time
 
     if file[0:4] == 'pert':  # load perturbation pxi files:
         pxi = vn.read_pxi_txt(pxipath + subject + '/' + subject + '_' + file[0:4] + '_' + file[4:6] + '.txt')
@@ -85,7 +87,7 @@ for i in range(0, len(filenames)):
             if pert.values[here, 0] > time_sets.values[k, 1]:
                 print("perturbation onset was before sit2stand AND wrong selected pert cycle, continue")
                 continue
-            # center marker data based on feet position at start of sit2stand
+           # center marker data based on feet position at start of sit2stand
             m = mrkdata.values[
                 np.argmin(np.abs(time_sets.values[k, 0] - mt)): np.argmin(np.abs(pert.values[here, 1] - mt)), :]
             m = lyz.recenterMrk(m)

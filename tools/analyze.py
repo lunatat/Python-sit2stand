@@ -9,6 +9,7 @@ import seaborn as sns
 from shapely.geometry import Point, Polygon
 from shapely.ops import nearest_points
 from shapely.geometry import shape
+from sklearn.decomposition import NMF
 
 # Fxns to analyze sit to stand data
 
@@ -682,4 +683,16 @@ def label_pert(data, pertinfo, t):
         indexend = np.argmin(np.abs(out[i, 1] - t))
         i = i + 1
         data.stable.iloc[indexstart:indexend] = 1
+    return data
+
+##########################################################################
+
+def synergyNMF(data):
+    """
+
+    :param data:
+    :return:
+    """
+    #model = NMF(init=)
+
     return data
