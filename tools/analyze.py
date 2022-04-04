@@ -568,15 +568,17 @@ def getmos(mrk, subject_index):
         mos[k, [0, 1]] = np.array([p1.x, p1.y]) - xcom_est[k, :]
         mos[k, 2] = np.sqrt((mos[k, 0]*mos[k, 0]) + (mos[k, 1]*mos[k, 1]))
         if pt.within(bos) == False:
-            mos[k, 2] = -1*mos[k, 2]
+            mos[k, 2] = -1*np.abs(mos[k, 2])
+        else:
+            mos[k, 2] = np.abs(mos[k, 2])
     plt.plot(mos)
     plt.plot(xcom, ycom)
     plt.plot(bosx[-1], bosy[-1])
     plt.show(block=False)
     plt.pause(1)
     plt.close()
-    mos_df = pandas.DataFrame(data=[np.min(mos[:, 2]), np.max(mos[:, 2]), np.mean(mos[:, 2]),
-                                    np.max(xcom), np.min(xcom), np.max(ycom), np.min(ycom)],
+    mos_df = pandas.DataFrame(data=np.column_stack([np.min(mos[:, 2]), np.max(mos[:, 2]), np.mean(mos[:, 2]),
+                                    np.max(xcom), np.min(xcom), np.max(ycom), np.min(ycom)]),
                               columns=('mos_min', 'mos_max', 'mos', 'xcom_max', 'xcom_min', 'ycom_max', 'ycom_min'))
     return mos_df
 
