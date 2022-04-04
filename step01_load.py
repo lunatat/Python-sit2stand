@@ -62,9 +62,7 @@ for i in range(0, len(filenames)):
     emg = vn.read_emg_csv(vn.getpath(emgpath, subject, file))
     # time of mrk, fplate, emg data
     mt = np.linspace(0, len(mrkdata.values[:, 0]) / 200, len(mrkdata.values[:, 0]))  # mrk time
-    mrkdata['time'] = mt
     et = np.linspace(0, len(emg.values[:, 0]) / 2000, len(emg.values[:, 0]))  # emg time
-    emg['time'] = et
     fpt = np.linspace(0, len(fplate.values[:, 0]) / 1000, len(fplate.values[:, 0]))  # fp time
 
     if file[0:4] == 'pert':  # load perturbation pxi files:

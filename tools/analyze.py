@@ -164,6 +164,9 @@ def getperttime(data, mrk, threshold):
     # 3 calculate current onset position of pelvis/ maximum pelvic height
     # 4  tension data checks valleys- of averaged current tension - finds end point by checking desired T
     #       treadmill onset is determined by velocity y of LEFT heel!
+    # end points are calculated based on tension and velocity BUT
+    # for paper: to standardize will use time of 150 frames  (.75s after onset of perturbation)
+    # todo: edit end point as needed
 
     out = mrk.values
     out = np.vstack(out[:, :]).astype(np.float)  # converts to float array
@@ -220,10 +223,10 @@ def getperttime(data, mrk, threshold):
             onset[j] = k + valleys[mxpkdist]
             meandesT = np.mean(out[k:k + 200, dest:dest + 8], 1)
             # find when meandestT is = to 15, then search forward for closest valley to it-thats endpoint:
-            endp[j] = valleys[np.argmin(np.argmin(meandesT - 15) - valleys)] + k
-            # onset[j] = k + 40 + np.argmin(meanT[40:pd])
-            # NOT FOOL PROOF check plots
-            # endp[j] = onset.item(j) + 100 + np.argmin(np.abs(meanT(onset.item(j))-meanT[100:]))
+            # endp[j] = valleys[np.argmin(np.argmin(meandesT - 15) - valleys)] + k  # todo use this for true endpt
+            # for paper: to standardize will use time of 150 frames  (.6s after onset of perturbation)
+            endp[j] = onset.item(j) + 150
+            # plot to see segmented tensions
             plt.plot(out[onset.item(j):endp.item(j), dest:dest + 8])
             plt.plot(out[onset.item(j):endp.item(j), ct:ct + 8])
             plt.show(block=False)
@@ -237,7 +240,8 @@ def getperttime(data, mrk, threshold):
             vely = (mrk.values[k + 1:k + 300, -2] - mrk.values[k:k + 299, -2]) / dt
             if data["pertDirection"][k] == 4.0:  # north
                 onset[j] = k + 100 + np.argmin(vely[100:150])  # NOT FOOL PROOF check plots
-                endp[j] = onset.item(j) + 150 + np.argmin(vely[150:])
+                # endp[j] = onset.item(j) + 150 + np.argmin(vely[150:])  # todo use this for true endp
+                endp[j] = onset.item(j) + 150  # for paper standard 120 frames
                 # plt.plot(vely)
                 # plt.plot(np.argmin(vely[100:150]) + 100, vely[100 + np.argmin(vely[100:150])], "o")
                 # plt.plot(np.argmin(vely[150:]) + 150, vely[150 + np.argmin(vely[150:])], "o")
@@ -252,7 +256,8 @@ def getperttime(data, mrk, threshold):
                     pertlvl[j] = 3
             elif data["pertDirection"][k] == 0.0:  # south
                 onset[j] = k + 100 + np.argmax(vely[100:150])
-                endp[j] = onset.item(j) + 150 + np.argmax(vely[150:])
+                #endp[j] = onset.item(j) + 150 + np.argmax(vely[150:])  # todo use this for true endp
+                endp[j] = onset.item(j) + 150  # for paper standard 150 frames
                 if data.values[k, f + 1] <= threshold.values[0, 4]:
                     if data.values[k, f+1] == 0.4:
                         pertlvl[j] = 1
@@ -281,6 +286,7 @@ def getperttime(data, mrk, threshold):
         j = j + 1
 
     ts = np.column_stack((onset, endp)) * dt  # time data
+    tdiff = ts[:, 1] - ts[:, 0]
     # get pelvis position data
     time_set = pandas.DataFrame(data=np.column_stack((ts, perttype, pertval, pertdirt, pertvalue, pertlvl, heightwhenpert)),
                                 columns=('pertStart', 'pertEnd', 'pertType', 'pertValue', 'pertDirt',
@@ -533,7 +539,8 @@ def getmos(mrk, subject_index):
     Indexing based on vicon skeleton 'fullbody_3DFF_editting'
 
     :param mrk: dataframe of markerset using
-    :return: pandas data frame of margin of stability in x,y and overall dist directions
+    :return: pandas data frame of margin of stability -overall dist, the min, max and mean, AND xCOM
+        max and min
     """
 
     # splice marker data:
@@ -547,7 +554,7 @@ def getmos(mrk, subject_index):
     l = 1.2 * zmn[0:-2]
     xcom = xmn[0:-2] + velx / np.sqrt(g / l)
     ycom = ymn[0:-2] + vely / np.sqrt(g / l)
-    xcom_est = np.column_stack([xcom, ycom])  # xcom estimate = based on horizontal pelvis center
+    xcom_est = np.column_stack([xcom, ycom])
     # bosx = [rtoe(:, 1), rm(:, 1), rheal(:, 1), lheal(:, 1), lm(:, 1), ltoe(:, 1)];
     # bosy = [rtoe(:, 2), rm(:, 2), rheal(:, 2), lheal(:, 2), lm(:, 2), ltoe(:, 2)];
     bosx = out[:, [57, 60, 63, 72, 69, 66]]
@@ -557,6 +564,7 @@ def getmos(mrk, subject_index):
         bos = Polygon(np.column_stack([bosx[k, :], bosy[k, :]]))
         pt = Point(xcom_est[k, :])
         p1, p2 = nearest_points(bos.exterior, pt)
+
         mos[k, [0, 1]] = np.array([p1.x, p1.y]) - xcom_est[k, :]
         mos[k, 2] = np.sqrt((mos[k, 0]*mos[k, 0]) + (mos[k, 1]*mos[k, 1]))
         if pt.within(bos) == False:
@@ -567,7 +575,9 @@ def getmos(mrk, subject_index):
     plt.show(block=False)
     plt.pause(1)
     plt.close()
-    mos_df = pandas.DataFrame(data=[np.mean(mos, axis=0)], columns=('mosx', 'mosy', 'mos'))
+    mos_df = pandas.DataFrame(data=[np.min(mos[:, 2]), np.max(mos[:, 2]), np.mean(mos[:, 2]),
+                                    np.max(xcom), np.min(xcom), np.max(ycom), np.min(ycom)],
+                              columns=('mos_min', 'mos_max', 'mos', 'xcom_max', 'xcom_min', 'ycom_max', 'ycom_min'))
     return mos_df
 
 
