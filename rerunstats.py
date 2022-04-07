@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 import pingouin as pg
 
-file = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Stats/outputvars-3-1-27-22.xlsx'
+file = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Stats/outputs-4-6-22.xlsx'
 savein= 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Python Data Output/Graphs/'
 savehere = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Python Data Output/Stat Tables/'
 

@@ -71,6 +71,7 @@ for i in range(0, len(filenames)):
         pert = lyz.getperttime(pxi, mrkdata, thresholds.loc[thresholds.subject == subject_index + 1])
         its = 0
         for k in range(0, len(time_sets.values[:, 0])):
+            # here = k
             # get the perturbation time onset that was delivered AFTER start of sit2stand
             if not [x for x in pert.values[:, 0] - time_sets.values[k, 0] if x > 0]:
                 print("perturbation onset before sit2stand")
@@ -82,8 +83,8 @@ for i in range(0, len(filenames)):
             if pert.values[here, 2] == 2.0:
                 print("skipping visual perturbation")
                 continue
-            if pert.values[here, 0] > time_sets.values[k, 1]:
-                print("perturbation onset was before sit2stand AND wrong selected pert cycle, continue")
+            if pert.values[here, 0] > (time_sets.values[k, 1]+0.5):
+                print("perturbation onset was after person standing for 0.5s")
                 continue
            # center marker data based on feet position at start of sit2stand
             m = mrkdata.values[
@@ -211,7 +212,7 @@ for i in range(0, len(filenames)):
 
     # save file info before loading next file
     if i == 0:
-        #continue
+        # continue
         saveoutputs.to_csv((savehere + '/' + subject + '.csv'))
     else:
         saveoutputs.to_csv((savehere + '/' + subject + '.csv'), mode='a', header=False)

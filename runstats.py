@@ -19,17 +19,15 @@ savein= 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Python Da
 #file = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Stats/outputvars-3pt1-1-24-22-testingwonly2trails.xlsx'
 file = 'C:/Users/lunat/Google Drive/ROAR LAB/ATPAD/Study01-SittoStand/Stats/outputvars-3-1-27-22.xlsx'
 #data = pandas.read_csv(file)
-data = pandas.read_excel(file)
+#data = pandas.read_excel(file)
 
-# filenames = vn.fxn_select_files()  # Ask user to select cvs files to load
-# for i in range(0, len(filenames)):
-#     if i == 0:
-#         data = pandas.read_csv(filenames[i])
-#     elif i == 14:
-#         data = pandas.concat([data, pandas.read_excel(filenames[i])])
-#     else:
-#         data = pandas.concat([data, pandas.read_csv(filenames[i])])
-#data.reset_index(inplace=True)
+filenames = vn.fxn_select_files()  # Ask user to select cvs files to load
+for i in range(0, len(filenames)):
+    if i == 0:
+        data = pandas.read_excel(filenames[i])
+    else:
+        data = pandas.concat([data, pandas.read_excel(filenames[i])])
+data.reset_index(inplace=True)
 #
 # #data = pandas.read_excel(filenames[0])
 
