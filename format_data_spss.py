@@ -31,4 +31,4 @@ for i in [0, 1]:
 # convert nans to 9999
 dataXwide = dataXwide.fillna(9999)
 dataXwide = dataXwide.reset_index()
-dataXwide.to_excel('datawide-4-7-2022')
+dataXwide.to_excel('datawide-4-7-2022.xlsx')
